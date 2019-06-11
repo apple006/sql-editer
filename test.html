@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <!-- 声明当前页面的编码集：charset=gbk,gb2312(中文编码) , utf-8(国际编码) -->
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+    <!-- 声明当前页面的三元素 -->
+    <title>helloWorld--zxk</title>
+    <meta name='keywords' content='spark,spring'>
+    <meta name='description' content='奔跑在spring上的spark'>
+    <!-- jquery bootstrap-->
+    <link rel="stylesheet" type="text/css" href="static/bootstrap-3.3.7/css/bootstrap.min.css">
+    <script type="text/javascript" src="static/jquery/jquery-2.1.3.min.js"></script>
+    <script type="text/javascript" src="static/bootstrap-3.3.7/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="static/bootstrap-table/bootstrap-table.min.js"></script>
+    <script type="text/javascript" src="static/bootstrap-table/bootstrap-table-zh-CN.min.js"></script>
+    <script type="text/javascript" src="static/bootstrap-treeview/dist/bootstrap-treeview.min.js"></script>
+    <script type="text/javascript" src="static/tableExport/libs/FileSaver/FileSaver.min.js"></script>
+    <script type="text/javascript" src="static/tableExport/libs/js-xlsx/xlsx.core.min.js"></script>
+    <script type="text/javascript" src="static/tableExport/libs/tableExport.min.js"></script>
+    <script type="text/javascript" src="static/bootstrap-table/bootstrap-table-export.js"></script>
+    <!--核心-->
+    <link rel="stylesheet" type="text/css" href="static/codemirror-5.47.0/lib/codemirror.css"/>
+    <script type="text/javascript" src="static/codemirror-5.47.0/lib/codemirror.js"></script>
+    <!--主题-->
+    <link rel="stylesheet" type="text/css" href="static/codemirror-5.47.0/theme/seti.css">
+    <!--sql-->
+    <link rel="stylesheet" type="text/css" href="static/codemirror-5.47.0/addon/hint/show-hint.css"/>
+    <script type="text/javascript" src="static/codemirror-5.47.0/addon/hint/show-hint.js"></script>
+    <script type="text/javascript" src="static/codemirror-5.47.0/addon/hint/sql-hint.js"></script>
+    <script type="text/javascript" src="static/codemirror-5.47.0/mode/sql/sql.js"></script>
+    <script type="text/javascript" src="static/codemirror-5.47.0/addon/selection/active-line.js"></script>
+    <!--    vue-->
+    <script type="text/javascript" src="static/vue/vue.min.2.6.10.js"></script>
+    <script type="text/javascript" src="static/axios/axios.min.js"></script>
+    <style type="text/css">
+        .CodeMirror {
+            border: 1px solid black;
+            font-size: 15px;
+            width: 600px;
+            height: 400px
+        }
+    </style>
+</head>
+<body>
+ 
+<div>
+    <nav class="navbar navbar-inverse  navbar-fixed-top">
+        <div class="container">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                        data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="/index" style="font-size: 24px">Etl运作管理系统</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    <li><a href="/logs">系统日志</a></li>
+                    <li><a href="/templates">模板工具</a></li>
+                    <li><a href="/settings">系统配置</a></li>
+                    <li><a href="/azkaban_job">Azkaban任务</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
+                           aria-expanded="false">ETL<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/logout">注销登录</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</div>
+<div class="page-header">
+    <h2>数据库管理工具
+        <small>v0.03 alpha</small>
+    </h2>
+</div>
+<div class="sql-editor" id="sqlEditorDiv">
+    <div class="col-md-3" id="TableTreeView">
+    </div>
+    <div class="col-md-9">
+        <button type="button" class="btn btn-primary" onclick="queryData()">
+            <i class="fa fa-check"></i>&nbsp;SQL语句执行
+        </button>
+
+        <button type="button" class="btn btn-primary" onclick="refreshTableTree()">
+            <i class="fa fa-check"></i>&nbsp;刷新全部数据库
+        </button>
+
+        <button type="button" class="btn btn-primary" onclick="refreshAllTable()">
+            <i class="fa fa-check"></i>&nbsp;刷新全部表
+        </button>
+        <button type="button" class="btn btn-primary" onclick="hide()">
+            <i class="fa fa-check"></i>&nbsp;hide
+        </button>
+        <button type="button" class="btn btn-primary" onclick="visible()">
+            <i class="fa fa-check"></i>&nbsp;visible
+        </button>
+        <button type="button" class="btn btn-primary" onclick="exportTable('#DataQueryTable','#input1')">
+            <i class="fa fa-check"></i>&nbsp;导出
+        </button>
+        <button type="button" id='clock' class="btn btn-default">
+            <i class="fa fa-check"></i>&nbsp;0
+        </button>
+
+        <article>
+            <h2>Sql编辑器</h2>
+            <form>
+                <label for="code">开始编写你的sql</label>
+                <textarea id="code" name="code" class="CodeMirror"></textarea>
+            </form>
+            <!--<p><strong>MIME types defined:</strong>
+                <code><a href="?mime=text/x-sql">text/x-sql</a></code>,
+                <code><a href="?mime=text/x-mysql">text/x-mysql</a></code>,
+                <code><a href="?mime=text/x-mariadb">text/x-mariadb</a></code>,
+                <code><a href="?mime=text/x-cassandra">text/x-cassandra</a></code>,
+                <code><a href="?mime=text/x-plsql">text/x-plsql</a></code>,
+                <code><a href="?mime=text/x-mssql">text/x-mssql</a></code>,
+                <code><a href="?mime=text/x-hive">text/x-hive</a></code>,
+                <code><a href="?mime=text/x-pgsql">text/x-pgsql</a></code>,
+                <code><a href="?mime=text/x-gql">text/x-gql</a></code>,
+                <code><a href="?mime=text/x-gpsql">text/x-gpsql</a></code>.
+                <code><a href="?mime=text/x-esper">text/x-esper</a></code>.
+            </p>-->
+        </article>
+
+        <div id="errorCodeDiv">
+            <label for="errorCode">系统提示：</label>
+            <textarea id="errorCode" name="errorCode"></textarea>
+        </div>
+        <table id="DataQueryTable" class="table table-striped">
+        </table>
+    </div>
+</div>
+<script type="text/javascript">
+    var timesRun = 0;
+    var clockTag = true
+    var interval = null
+
+    //前端计时器
+    function start(clock) {
+        if ((clockTag !== true) || interval == null) {
+            var time = 0
+            clockTag = true
+            interval = setInterval(function () {
+                timesRun += 1;
+                if (clockTag === false) {
+                    clearInterval(interval);
+                    time = 0
+                }
+                var stringLength = time.toString().split(".")[0].length + 2;
+                var showString = time.toString().substring(0, stringLength) + "秒"
+
+                $("#" + clock).text(showString);
+                time = time + 0.1
+                //do whatever here..
+            }, 100);
+        }
+    };
+
+    //停止前端计时器
+    function stop() {
+        clearInterval(interval);
+        clockTag = false
+    };
+
+    $(function () {// 初始化内容
+        $('#errorCodeDiv').addClass('hidden')
+    });
+
+    function copyText(text) {
+        const Url2 = text;
+        const oInput = document.createElement('input');
+        oInput.value = Url2;
+        document.body.appendChild(oInput);
+        oInput.select(); // 选择对象
+        document.execCommand("Copy"); // 执行浏览器复制命令
+        oInput.className = 'oInput';
+        oInput.style.display = 'none';
+    }
+
+
+    function queryData() {
+        start('clock');
+        for (let i = 0; i < 10000000000; i++) {
+
+        }
+        alert("success");
+        stop();
+    }
+
+</script>
+</body>
+</html>
